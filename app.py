@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from translate import translate,translateIn
 from pydantic import BaseModel
-from typing import Optional
 
 app = FastAPI()
 

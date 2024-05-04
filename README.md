@@ -9,6 +9,8 @@ git clone https://github.com/cse21mce/translate-api.git
 ## Package Installatoin
 
 ```bash
+pip install fastapi
+pip install pydantic
 pip install torch
 pip install transformers
 git clone https://github.com/VarunGumma/IndicTransTokenizer
