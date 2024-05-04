@@ -61,3 +61,20 @@ response: {
   "result": "भारत के राष्ट्रपति"
 }
 ```
+
+## Supported Languages
+
+```json
+"supported_languages": [
+    "punjabi",
+    "bengali",
+    "malayalam",
+    "marathi",
+    "tamil",
+    "gujarati",
+    "telugu",
+    "hindi",
+    "urdu",
+    "kannada"
+  ]
+```
