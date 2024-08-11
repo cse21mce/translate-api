@@ -1,7 +1,10 @@
+
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-from IndicTransTokenizer import IndicProcessor  # Assuming correct import path
+from IndicTransTokenizer import IndicProcessor 
 import os
+
+
 os.environ['CUDA_VISIBLE_DEVICES']='2, 3'
 
 
@@ -20,76 +23,30 @@ ip = IndicProcessor(inference=True)
 src_lang="eng_Latn"
 
 tgt_langs = {
-"punjabi": "pan_Guru",
-"bengali": "ben_Beng",
-"malayalam": "mal_Mlym",
-"marathi": "mar_Deva",
-"tamil": "tam_Taml",
-"gujarati": "guj_Gujr",
-"telugu": "tel_Telu",
-"hindi": "hin_Deva",
-"urdu": "urd_Arab",
-"kannada": "kan_Knda",
+    "hindi": "hin_Deva",
+    "urdu": "urd_Arab",
+    "punjabi": "pan_Guru",
+    "gujarati": "guj_Gujr",
+    "marathi": "mar_Deva",
+    "telugu": "tel_Telu",
+    "kannada": "kan_Knda",
+    "malayalam": "mal_Mlym",
+    "tamil": "tam_Taml",
+    "odia": "ory_Orya",
+    "bengali": "ben_Beng",
+    "assamese": "asm_Beng",
+    "manipuri_meitei": "mni_Mtei",
 }
 
-async def translate(text):
-
-    input_sentences = text.split('.')[:-1] if '.' in text else [text]
-    
-
-    results = {}
-
-    for tgt_lang in tgt_langs:
-
-        batch = ip.preprocess_batch(input_sentences, src_lang=src_lang, tgt_lang=tgt_langs.get(tgt_lang))
-
-
-        # Tokenization and encoding
-        inputs = tokenizer(
-            batch,
-            truncation=True,
-            padding="longest",
-            return_tensors="pt",
-            return_attention_mask=True,
-        ).to(DEVICE)
-
-        # Translation
-        with torch.no_grad():
-            generated_tokens = model.generate(
-                **inputs,
-                use_cache=True,
-                min_length=0,
-                max_length=256,
-                num_beams=5,
-                num_return_sequences=1,
-            )
-
-        # Decoding and postprocessing
-        with tokenizer.as_target_tokenizer():
-            generated_tokens = tokenizer.batch_decode(
-                generated_tokens.detach().cpu().tolist(),
-                skip_special_tokens=True,
-                clean_up_tokenization_spaces=True,
-            )
-
-        translations = ip.postprocess_batch(generated_tokens, lang=tgt_langs.get(tgt_lang))
-
-        # Joining translations
-        result = ""
-        result = ''.join(translations)
-        results[tgt_lang] = result.strip()
-
-        print(tgt_lang,":",translations)
-
-    return results
-
-async def translateIn(text,tgt_lang):
-    input_sentences = text.split('.')[:-1] if '.' in text else [text]
+async def translateIn(text, tgt_lang):
+    # Split text into sentences, ensuring the last part is included
+    input_sentences = text.split('.')
+    if input_sentences[-1] == '':
+        input_sentences = input_sentences[:-1]  # Remove trailing empty string if present
 
     tgt_lang = tgt_langs.get(tgt_lang)
 
     batch = ip.preprocess_batch(input_sentences, src_lang=src_lang, tgt_lang=tgt_lang)
-
 
     # Tokenization and encoding
     inputs = tokenizer(
@@ -122,8 +79,19 @@ async def translateIn(text,tgt_lang):
     translations = ip.postprocess_batch(generated_tokens, lang=tgt_lang)
 
     # Joining translations
-    result = ""
     result = ''.join(translations)
-    print(tgt_lang,":",translations)
     return result.strip()
 
+async def translate(text):
+    # Split text into sentences, ensuring the last part is included
+    input_sentences = text.split('.')
+    if input_sentences[-1] == '':
+        input_sentences = input_sentences[:-1]  # Remove trailing empty string if present
+    
+    results = {}
+
+    for tgt_lang in tgt_langs:
+        translation = await translateIn(text, tgt_lang)
+        results[tgt_lang] = translation
+
+    return results
