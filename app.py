@@ -1,6 +1,7 @@
-from fastapi import FastAPI
-from translate import translate, translateIn  # Importing translation functions
+from fastapi import FastAPI,BackgroundTasks
+from translate import translate, translate_and_store  # Importing translation functions
 from pydantic import BaseModel  # Importing BaseModel for request validation
+from db import store_translation_in_db
 
 app = FastAPI()  # Creating a FastAPI application instance
 
@@ -22,49 +23,60 @@ languages = {
 }
 
 # Define translation endpoint for default translation service
-class Translation(BaseModel):
-    text: str  # Request model to validate 'text' field
+class PressRelease(BaseModel):
+    title: str 
+    content: str 
+    date_posted: str 
+    ministry: str 
+
+
 
 @app.post("/translate")
-async def translate_text(req: Translation):
+async def translate_text(req: PressRelease,background_tasks: BackgroundTasks):
     try:
-        text = req.text.strip()
+        title = req.title.strip()
+        content = req.content.strip()
+        ministry = req.ministry.strip()
 
-        if not text:
-            return {"translation": text}  # If no text provided, return input text
+        if not title or not content or not ministry:
+            return {"error": "Press Release is not complete. It must contain title, content and ministry"}  # If no text provided, return input text
+        # Add the translate function to be run in the background
+        
+        
+        background_tasks.add_task(translate, title, content, ministry)
 
-        translation_result = await translate(text)  # Call translate function
-        return translation_result  # Return translation result
+        return {"message": "Translation process has started in the background."}
+
 
     except Exception as e:
         # If an exception occurs during translation, return an error response
         return {"error": str(e)}
-
-
-
-
-
 
 
 
 # Define translation endpoint for specific language translation
 @app.post("/translate/{lang}")
-async def translate_text(lang:str, req: Translation):
+async def translate_text(lang: str, req: PressRelease, background_tasks: BackgroundTasks):
     try:
-        text = req.text.strip()
-
-        if (not text or lang == 'english'):
-            return {"result": text}  # If no text provided, return input text
+        if lang == 'english' or not lang:
+            return req  # If the language is English or not provided, return the original request
         
         if lang not in languages:
-            return {"error": 'Language not found, unable to translate', "supported_languages":list(languages.keys())}
+            return {"error": 'Language not found, unable to translate', "supported_languages": list(languages.keys())}
         
-        translation_result = await translateIn(text, lang)  # Call translateIn function for specified language
-        return {"result": translation_result}  # Return translation result
+        title = req.title.strip()
+        content = req.content.strip()
+        ministry = req.ministry.strip()
+
+        background_tasks.add_task(translate_and_store, title, content, ministry, lang)
+
+        return {"message": f"Translation to {lang} has started in the background."}
+
 
     except Exception as e:
         # If an exception occurs during translation, return an error response
         return {"error": str(e)}
+
 
 
 

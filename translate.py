@@ -3,7 +3,7 @@ import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from IndicTransTokenizer import IndicProcessor 
 import os
-
+from db import store_translation_in_db,check_translation_in_db
 
 os.environ['CUDA_VISIBLE_DEVICES']='2, 3'
 
@@ -82,16 +82,37 @@ async def translateIn(text, tgt_lang):
     result = ''.join(translations)
     return result.strip()
 
-async def translate(text):
-    # Split text into sentences, ensuring the last part is included
-    input_sentences = text.split('.')
-    if input_sentences[-1] == '':
-        input_sentences = input_sentences[:-1]  # Remove trailing empty string if present
-    
-    results = {}
 
+
+async def translate_and_store(title, content, ministry, lang):
+    try:
+        existing_translation = check_translation_in_db(title, lang)
+        
+        if existing_translation:
+            print(f"Translation for {lang} already exists. Skipping translation.")
+            return
+        
+        # Perform translations
+        translated_title = await translateIn(title, lang)
+        translated_content = await translateIn(content, lang)
+        translated_ministry = await translateIn(ministry, lang)
+
+        # Store the translation in the database
+        store_translation_in_db(
+            title,
+            lang,
+            {
+                "title": translated_title,
+                "content": translated_content,
+                "ministry": translated_ministry
+            }
+        )
+    except Exception as e:
+        print(f"Failed to translate and store for {lang}: {e}")
+
+
+
+
+async def translate(title, content, ministry):
     for tgt_lang in tgt_langs:
-        translation = await translateIn(text, tgt_lang)
-        results[tgt_lang] = translation
-
-    return results
+        await translate_and_store(title,content,ministry,tgt_lang)
