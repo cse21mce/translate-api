@@ -14,7 +14,7 @@ pip install pydantic
 pip install torch
 pip install transformers
 git clone https://github.com/VarunGumma/IndicTransToolkit
-cd IndicTransTokenizer
+cd IndicTransToolkit
 
 pip install --editable ./
 ```
