@@ -15,8 +15,6 @@ h11==0.14.0
 huggingface-hub==0.24.6
 idna==3.8
 imagesize==1.4.1
-indic_nlp_library_IT2 @ git+https://github.com/VarunGumma/indic_nlp_library@601521e05ed0ed8f2165ac317a47d186e25b6f0d == 0.0.2
--e git+https://github.com/VarunGumma/IndicTransToolkit@0c607654e8b6cce897a32039df79018a1daff4e2#egg=IndicTransToolkit == 1.0.2
 Jinja2==3.1.4
 joblib==1.4.2
 lxml==5.3.0
