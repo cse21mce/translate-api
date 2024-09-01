@@ -1,7 +1,6 @@
-
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-from IndicTransTokenizer import IndicProcessor 
+from IndicTransToolkit.processor import IndicProcessor 
 import os
 import logging
 from db import store_translation_in_db,check_translation_in_db,update_translation_status

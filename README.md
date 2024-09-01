@@ -13,7 +13,7 @@ pip install fastapi
 pip install pydantic
 pip install torch
 pip install transformers
-git clone https://github.com/VarunGumma/IndicTransTokenizer
+git clone https://github.com/VarunGumma/IndicTransToolkit
 cd IndicTransTokenizer
 
 pip install --editable ./
