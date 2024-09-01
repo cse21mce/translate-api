@@ -42,6 +42,9 @@ class PressRelease(BaseModel):
     ministry: str 
 
 
+@app.get("/", tags=["Root"])
+def root():
+    return {"message": "Welcome to PIB Press Releases Translate API"}
 
 @app.post("/translate")
 async def translate_text(req: PressRelease,background_tasks: BackgroundTasks):
