@@ -3,10 +3,14 @@ import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from IndicTransTokenizer import IndicProcessor 
 import os
-from db import store_translation_in_db,check_translation_in_db
+import logging
+from db import store_translation_in_db,check_translation_in_db,update_translation_status
 
 os.environ['CUDA_VISIBLE_DEVICES']='2, 3'
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Device selection
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -89,9 +93,9 @@ async def translate_and_store(title, content, ministry, lang):
         existing_translation = check_translation_in_db(title, lang)
         
         if existing_translation:
-            print(f"Translation for {lang} already exists. Skipping translation.")
-            return
+            return logger.error(f"Translation for {lang} already exists. Skipping translation.")
         
+        update_translation_status(title,lang,"in_progress")
         # Perform translations
         translated_title = await translateIn(title, lang)
         translated_content = await translateIn(content, lang)
@@ -104,11 +108,13 @@ async def translate_and_store(title, content, ministry, lang):
             {
                 "title": translated_title,
                 "content": translated_content,
-                "ministry": translated_ministry
+                "ministry": translated_ministry,
+                "status": "completed",
             }
         )
     except Exception as e:
-        print(f"Failed to translate and store for {lang}: {e}")
+        logger.error(e)
+        raise Exception(f"Failed to translate and store for {lang}: {e}")
 
 
 

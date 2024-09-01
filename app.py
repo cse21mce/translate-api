@@ -1,9 +1,22 @@
 from fastapi import FastAPI,BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from translate import translate, translate_and_store  # Importing translation functions
 from pydantic import BaseModel  # Importing BaseModel for request validation
-from db import store_translation_in_db
+from db import release_exist_with_title
 
-app = FastAPI()  # Creating a FastAPI application instance
+
+# Creating a FastAPI application instance
+app = FastAPI(title="PIB Press Releases Translator", description="An API to translate PIB press releases.", version="1.0.0")  
+
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins, you can specify a list of allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Supported languages for translation
 languages = {
@@ -26,7 +39,6 @@ languages = {
 class PressRelease(BaseModel):
     title: str 
     content: str 
-    date_posted: str 
     ministry: str 
 
 
@@ -42,15 +54,17 @@ async def translate_text(req: PressRelease,background_tasks: BackgroundTasks):
             return {"error": "Press Release is not complete. It must contain title, content and ministry"}  # If no text provided, return input text
         # Add the translate function to be run in the background
         
+        if(not release_exist_with_title(title)):
+            raise Exception("Press Release with the title not exists in the database.")
         
         background_tasks.add_task(translate, title, content, ministry)
 
-        return {"message": "Translation process has started in the background."}
+        return {"message": f"Translation has been started.","type":"info","success":True}
 
 
     except Exception as e:
         # If an exception occurs during translation, return an error response
-        return {"error": str(e)}
+        return {"message": str(e),"type":"error","success":False}
 
 
 
@@ -68,14 +82,20 @@ async def translate_text(lang: str, req: PressRelease, background_tasks: Backgro
         content = req.content.strip()
         ministry = req.ministry.strip()
 
-        background_tasks.add_task(translate_and_store, title, content, ministry, lang)
 
-        return {"message": f"Translation to {lang} has started in the background."}
+        if(not release_exist_with_title(title)):
+            raise Exception("Press Release with the title not exists in the database.")
+
+        background_tasks.add_task(translate_and_store, title, content, ministry, lang)
+        # background_tasks.add_task(translate, title, content, ministry)
+
+
+        return {"message": f"Translation to {lang} has been started.","type":"info","success":True}
 
 
     except Exception as e:
         # If an exception occurs during translation, return an error response
-        return {"error": str(e)}
+        return {"message": str(e),"type":"error","success":False}
 
 
 
@@ -87,5 +107,5 @@ async def translate_text(lang: str, req: PressRelease, background_tasks: Backgro
 # Start the FastAPI application using Uvicorn server
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
 
